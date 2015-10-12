@@ -28,17 +28,37 @@ RUN \
   sed -i 's/^\(dir .*\)$/# \1\ndir \/data/' /etc/redis/redis.conf && \
   sed -i 's/^\(logfile .*\)$/# \1/' /etc/redis/redis.conf
 
+FROM dockerfile/java:oracle-java8
+
+ENV ES_PKG_NAME elasticsearch-1.5.0
+
+# Install Elasticsearch.
+RUN \
+  cd / && \
+  wget https://download.elasticsearch.org/elasticsearch/elasticsearch/$ES_PKG_NAME.tar.gz && \
+  tar xvzf $ES_PKG_NAME.tar.gz && \
+  rm -f $ES_PKG_NAME.tar.gz && \
+  mv /$ES_PKG_NAME /elasticsearch
+
 # Define mountable directories.
 VOLUME ["/data"]
+
+# Mount elasticsearch.yml config
+ADD config/elasticsearch.yml /elasticsearch/config/elasticsearch.yml
 
 # Define working directory.
 WORKDIR /data
 
+# Define default command.
+
 CMD ["nginx"]
 CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/supervisord.conf"]
 CMD ["redis-server", "/etc/redis/redis.conf"]
+CMD ["/elasticsearch/bin/elasticsearch"]
 
 # Expose ports.
 EXPOSE 6379
 EXPOSE 8118
 EXPOSE 80
+EXPOSE 9200
+EXPOSE 9300
